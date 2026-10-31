@@ -1,0 +1,35 @@
+'use strict';
+const $ = (selector) => document.querySelector(selector);
+const nav = $('#nav'); const toggle = $('#menu-toggle');
+toggle.addEventListener('click', () => { const open = nav.classList.toggle('open'); toggle.setAttribute('aria-expanded', String(open)); toggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation'); });
+nav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { nav.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); toggle.setAttribute('aria-label', 'Open navigation'); }));
+const reveals = document.querySelectorAll('.reveal');
+if ('IntersectionObserver' in window) { const io = new IntersectionObserver(entries => entries.forEach(entry => { if(entry.isIntersecting){entry.target.classList.add('visible');io.unobserve(entry.target);} }),{threshold:.06,rootMargin:'0px 0px 35px 0px'}); reveals.forEach(el=>io.observe(el)); } else reveals.forEach(el=>el.classList.add('visible'));
+const updateProgress=()=>{const range=document.documentElement.scrollHeight-window.innerHeight;$('#reading-progress').style.width=(range>0?window.scrollY/range*100:0)+'%';};window.addEventListener('scroll',updateProgress,{passive:true});updateProgress();$('#year').textContent=new Date().getFullYear();
+const caseStudies={
+ mirage:{kicker:'SECURITY AWARENESS / DIGITAL TRUST', title:'Wadi Rum Mirage',lead:'A bilingual, interactive environment for exploring suspicious links, messages, and patterns of digital deception.',overview:'Wadi Rum Mirage helps users examine URL structure, inspect common phishing indicators, visualize trust relationships, and explore educational investigation cases. It is designed to teach informed inspection rather than claim real-time threat detection.',contribution:'Independent project work across product concept, Arabic/English user experience, responsive front end, Python/FastAPI application, and rule-based security-awareness features.',tags:['Python','FastAPI','JavaScript','HTML/CSS','Security Awareness'],links:[['Live demo','https://wadi-rum-mirage.onrender.com/'],['View source','https://github.com/obada2008/Wadi-Rum-Mirage']]},
+ cryptix:{kicker:'WEB APPLICATION / CRYPTOGRAPHY EDUCATION',title:'CRYPTIX',lead:'An interactive project that makes cryptography concepts more approachable through hands-on exploration.',overview:'A browser-based educational experiment focused on engaging with encryption concepts. Specific cryptographic algorithms and security claims are intentionally not listed until verified against the source code.',contribution:'Personal web-development and cryptography-learning project built around interface design and interactive exploration.',tags:['HTML','CSS','JavaScript','Cryptography'],links:[['Live demo','https://obada2008.github.io/CRYPTIX/'],['View source','https://github.com/obada2008/CRYPTIX']]},
+ gesture:{kicker:'EXPERIMENT / COMPUTER VISION',title:'Hand Gesture Control',lead:'Exploring touch-free interaction with software through hand tracking and visual gestures.',overview:'A personal experiment with using visual hand gestures to trigger actions such as launching desktop applications. No public code repository or demo is currently available.',contribution:'Independent experimentation with computer-vision-driven interaction and translating recognized gestures into practical desktop actions.',tags:['Computer Vision','Human–Computer Interaction','Prototype'],links:[]}
+};
+const dialog=$('#case-dialog');const close=$('#case-close');let opener=null;
+function fillText(selector,text){$(selector).textContent=text;}
+document.querySelectorAll('[data-project]').forEach(b=>b.addEventListener('click',()=>{const p=caseStudies[b.dataset.project];if(!p)return;opener=b;fillText('#case-kicker',p.kicker);fillText('#case-title',p.title);fillText('#case-lead',p.lead);fillText('#case-overview',p.overview);fillText('#case-contribution',p.contribution);const tags=$('#case-tags');tags.replaceChildren();p.tags.forEach(t=>{const s=document.createElement('span');s.textContent=t;tags.append(s)});const actions=$('#case-actions');actions.replaceChildren();p.links.forEach(([label,url])=>{const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=label+' ↗';actions.append(a)});dialog.showModal();close.focus();}));
+close.addEventListener('click',()=>dialog.close());dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});dialog.addEventListener('close',()=>opener?.focus());
+const contact=$('#contact-form');const feedback=$('#form-feedback');contact.addEventListener('submit',async(e)=>{e.preventDefault();if(!contact.reportValidity())return;const data=new FormData(contact);if(data.get('_gotcha'))return;const name=String(data.get('name')||'').trim(),email=String(data.get('email')||'').trim(),subject=String(data.get('subject')||'').trim(),message=String(data.get('message')||'').trim();const endpoint=String(window.OBADA_CONFIG?.formEndpoint||'').trim();if(!endpoint){const subj=encodeURIComponent('[Portfolio] '+subject);const body=encodeURIComponent('From: '+name+' ('+email+')\n\n'+message);window.location.href='mailto:obadakhader70@gmail.com?subject='+subj+'&body='+body;feedback.textContent='Your email application should open with a draft. Please send it there.';return;}if(!/^https:\/\/formspree\.io\/f\/[A-Za-z0-9]+$/.test(endpoint)){feedback.textContent='The contact service is not configured correctly. Please email me directly.';return;}const button=contact.querySelector('button[type=submit]');button.disabled=true;feedback.textContent='Sending message…';try{const response=await fetch(endpoint,{method:'POST',headers:{Accept:'application/json'},body:data});if(!response.ok)throw Error('Unable to deliver');feedback.textContent='Message sent. Thank you for reaching out!';contact.reset();}catch{feedback.textContent='Could not send your message. Please email obadakhader70@gmail.com directly.';}finally{button.disabled=false;}});
+
+// Light-touch interactive hero depth, disabled for reduced motion and coarse pointers.
+const art=document.querySelector('.hero-art');
+if(art && matchMedia('(pointer:fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+  let last=0;
+  art.addEventListener('pointermove',e=>{
+    const r=art.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+    if(last) cancelAnimationFrame(last);
+    last=requestAnimationFrame(()=>{art.style.setProperty('--tilt-x',(-y*7).toFixed(2)+'deg');art.style.setProperty('--tilt-y',(x*9).toFixed(2)+'deg')});
+  });
+  art.addEventListener('pointerleave',()=>{art.style.setProperty('--tilt-x','0deg');art.style.setProperty('--tilt-y','0deg')});
+}
+const mainSections=[...document.querySelectorAll('main section[id]')];
+if('IntersectionObserver' in window){
+ const currentNav=new IntersectionObserver(entries=>{entries.forEach(e=>{if(!e.isIntersecting)return;document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('current',a.hash==='#'+e.target.id))})},{rootMargin:'-25% 0px -65% 0px'});
+ mainSections.forEach(el=>currentNav.observe(el));
+}
